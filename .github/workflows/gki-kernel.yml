@@ -711,3 +711,36 @@ jobs:
           path: |
             *AnyKernel3.zip
             *.img
+- name: Patch Rejection Scanner
+  id: scan_rej
+  run: |
+    # 扫描所有.rej文件
+    REJ_FILES=$(find . -name "*.rej")
+    if [ -n "$REJ_FILES" ]; then
+      echo "::warning:: Found patch rejections: $REJ_FILES"
+      
+      # 创建诊断报告
+      mkdir -p patch_failures
+      for file in $REJ_FILES; do
+        echo "===== ${file} =====" >> patch_failures/report.txt
+        cat "$file" >> patch_failures/report.txt
+        echo "\n\n" >> patch_failures/report.txt
+        
+        # 保存原始文件和.rej文件
+        cp "${file%.rej}" "patch_failures/$(dirname "${file#./}")"
+        cp "$file" "patch_failures/$(dirname "${file#./}")"
+      done
+      
+      # 设置后续步骤的条件变量
+      echo "HAS_REJ=true" >> $GITHUB_ENV
+    else
+      echo "HAS_REJ=false" >> $GITHUB_ENV
+    fi
+
+- name: Upload Rejection Reports
+  if: env.HAS_REJ == 'true'
+  uses: actions/upload-artifact@v3
+  with:
+    name: patch-rejections-${{ github.run_id }}
+    path: patch_failures/
+    retention-days: 7
