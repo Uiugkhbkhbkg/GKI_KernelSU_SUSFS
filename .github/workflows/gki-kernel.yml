@@ -711,7 +711,8 @@ jobs:
           path: |
             *AnyKernel3.zip
             *.img
-- name: Patch Rejection Scanner
+       
+- name: PatchRejectionScanner
   id: scan_rej
   run: |
     # 扫描所有.rej文件
